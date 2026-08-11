@@ -4,9 +4,9 @@ package com.its.user.entity;
  * User role, as stored in {@code user.role TINYINT}.
  *
  * <p><strong>The encoding is 0 = PROJECT_OWNER, 1 = ASSIGNEE.</strong> This is not
- * arbitrary and it is not the intuitive ordering - it comes from the reference workbook
- * {@code DB-reference_ITS_v0.1.xlsx}, where the two project owners (Emily Sinha, Priya
- * Jackson) carry role 0 and the two engineers (Michael Patel, Carlos Singh) carry role 1.
+ * arbitrary and it is not the intuitive ordering - it comes from the reference workbook,
+ * where the two project owners (Emily Sinha, Priya Jackson) carry role 0 and the two
+ * engineers (Michael Patel, Carlos Singh) carry role 1.
  * It is corroborated twice over: every {@code project_owner_id} in the sample Project
  * table resolves to a role-0 user, and every {@code assignee_id} in the sample Issue
  * table resolves to a role-1 user. See SRS assumption A-04.

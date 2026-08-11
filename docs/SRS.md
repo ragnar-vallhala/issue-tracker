@@ -5,7 +5,7 @@
 |---|---|
 | Document | Software Requirements Specification |
 | Product | Issue Tracking System (ITS) |
-| Sources | Case study `FY27_Spring...t_Week3.pdf` (v. 05.2026) · `DB-reference_ITS_v0.1.xlsx` |
+| Sources | Case-study specification (v. 05.2026) and its reference workbook |
 | Status | Revision 3 — assumptions reviewed; reference workbook incorporated |
 | Companion | [DESIGN.md](./DESIGN.md) |
 
@@ -35,12 +35,12 @@ The deliverable is a **RESTful backend plus a complete web UI**. It allows users
 | ISC | Inter-Service Communication — a call from one microservice to another, marked in the source document |
 | Gateway | Spring Cloud Gateway; the single entry point for all API traffic |
 | Web tier | The JSP web application (`web-ui`); the system's only human-facing component |
-| Workbook | `DB-reference_ITS_v0.1.xlsx` — the reference schema and sample data |
+| Workbook | The reference workbook supplied with the case study — schema and sample data |
 | FR / NFR | Functional / Non-Functional Requirement |
 
 ### 1.4 References
 1. Case study specification PDF (9 pages), reviewed during analysis; not redistributed with this repository.
-2. `DB-reference_ITS_v0.1.xlsx` — reference workbook containing the Issue, User and Project tables with sample rows. **Reviewed in full**; it is a single sheet covering the database only, with no sample endpoint outcomes ([A-19](#a-19)).
+2. Reference workbook containing the Issue, User and Project tables with sample rows. **Reviewed in full**; it is a single sheet covering the database only, with no sample endpoint outcomes ([A-19](#a-19)).
 
 ---
 
@@ -528,7 +528,7 @@ Revision 1 read the Objective and the eight Postman-verified milestones as backe
 
 <a id="a-10"></a>
 ### A-10 — Reference workbook · **RESOLVED**
-Received as `DB-reference_ITS_v0.1.xlsx`. It supplies the three tables with sample rows and settles [A-11](#a-11), [A-15](#a-15), [A-16](#a-16) and, decisively, [A-04](#a-04). Its contents are folded into §10.
+Received. It supplies the three tables with sample rows and settles [A-11](#a-11), [A-15](#a-15), [A-16](#a-16) and, decisively, [A-04](#a-04). Its contents are folded into §10.
 
 <a id="a-11"></a>
 ### A-11 — Enumerated values · **RESOLVED for the attested values**

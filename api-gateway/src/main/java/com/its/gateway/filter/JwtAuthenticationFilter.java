@@ -62,6 +62,17 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     private static final List<String> PUBLIC_PREFIXES = List.of(
             "/swagger-ui", "/v3/api-docs", "/webjars", "/actuator/health");
 
+    /**
+     * Documentation paths that appear <em>below</em> a service's route prefix.
+     *
+     * <p>Each service publishes its OpenAPI document under its own routed prefix -
+     * {@code /api/users/v3/api-docs} and so on - so that one gateway route reaches both
+     * the API and its documentation. Those paths do not start with {@code /v3/api-docs},
+     * which is why a prefix check alone left Swagger returning 401.
+     */
+    private static final List<String> PUBLIC_SEGMENTS = List.of(
+            "/v3/api-docs", "/swagger-ui", "/webjars");
+
     private final JwtValidator jwtValidator;
 
     public JwtAuthenticationFilter(JwtValidator jwtValidator) {
@@ -106,8 +117,21 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     private boolean isPublic(ServerHttpRequest request) {
         String path = request.getURI().getPath();
 
+        // A traversal sequence is never legitimate here, and it is the one way a
+        // "contains" check below could be talked into exempting something else -
+        // /api/issues/v3/api-docs/../../secret would otherwise read as public.
+        if (path.contains("..")) {
+            return false;
+        }
+
         for (String prefix : PUBLIC_PREFIXES) {
             if (path.startsWith(prefix)) {
+                return true;
+            }
+        }
+
+        for (String segment : PUBLIC_SEGMENTS) {
+            if (path.contains(segment)) {
                 return true;
             }
         }

@@ -54,7 +54,7 @@ public class DataSeeder implements CommandLineRunner {
             return;
         }
 
-        // The four users from DB-reference_ITS_v0.1.xlsx. Note the role values: the two
+        // The four users from the reference workbook. Note the role values: the two
         // project owners are 0 and the two engineers are 1 (SRS A-04). The workbook's
         // profile column holds descriptions of the person, not image paths (SRS A-16);
         // the text is reconstructed from the truncated cells.

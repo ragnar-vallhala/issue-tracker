@@ -163,6 +163,73 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
+    @DisplayName("Each service's OpenAPI document is reachable without a token")
+    void allowsRoutedApiDocs() {
+        // These sit below a service's route prefix, so a startsWith check against
+        // "/v3/api-docs" misses them entirely - which is what left Swagger 401ing.
+        for (String path : new String[]{
+                "/api/users/v3/api-docs",
+                "/api/projects/v3/api-docs",
+                "/api/issues/v3/api-docs",
+                "/api/comments/v3/api-docs"}) {
+
+            CapturingChain chain = new CapturingChain();
+            MockServerWebExchange exchange =
+                    MockServerWebExchange.from(MockServerHttpRequest.get(path));
+
+            filter.filter(exchange, chain).block();
+
+            assertThat(chain.wasCalled())
+                    .withFailMessage("expected %s to be public", path)
+                    .isTrue();
+        }
+    }
+
+    @Test
+    @DisplayName("The gateway's own Swagger UI is reachable without a token")
+    void allowsGatewaySwaggerUi() {
+        for (String path : new String[]{"/swagger-ui.html", "/v3/api-docs", "/webjars/x.js"}) {
+            CapturingChain chain = new CapturingChain();
+            filter.filter(MockServerWebExchange.from(
+                    MockServerHttpRequest.get(path)), chain).block();
+
+            assertThat(chain.wasCalled()).isTrue();
+        }
+    }
+
+    @Test
+    @DisplayName("A traversal sequence cannot smuggle a private path past the docs exemption")
+    void rejectsTraversalDisguisedAsDocs() {
+        // Without the '..' guard, a "contains" match on /v3/api-docs would exempt this.
+        MockServerWebExchange exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.get("/api/issues/v3/api-docs/../../users"));
+
+        CapturingChain chain = new CapturingChain();
+        filter.filter(exchange, chain).block();
+
+        assertThat(chain.wasCalled()).isFalse();
+        assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    @DisplayName("Ordinary API paths are still protected")
+    void docsExemptionDoesNotLeak() {
+        for (String path : new String[]{
+                "/api/users", "/api/issues", "/api/projects/1011", "/api/comments/issue/1"}) {
+
+            CapturingChain chain = new CapturingChain();
+            MockServerWebExchange exchange =
+                    MockServerWebExchange.from(MockServerHttpRequest.get(path));
+
+            filter.filter(exchange, chain).block();
+
+            assertThat(chain.wasCalled())
+                    .withFailMessage("expected %s to require a token", path)
+                    .isFalse();
+        }
+    }
+
+    @Test
     @DisplayName("A missing token is 401")
     void rejectsMissingToken() {
         MockServerWebExchange exchange = MockServerWebExchange.from(
