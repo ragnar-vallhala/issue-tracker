@@ -1,0 +1,77 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          # Off deliberately. With it on, every registered service is auto-exposed at
+          # /service-name/**, and the published URL surface stops being the one documented
+          # in SRS section 9. Explicit routes only.
+          enabled: false
+
+      routes:
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/users/**
+
+        - id: project-service
+          uri: lb://project-service
+          predicates:
+            - Path=/api/projects/**
+
+        - id: issue-service
+          uri: lb://issue-service
+          predicates:
+            - Path=/api/issues/**
+
+        - id: comment-service
+          uri: lb://comment-service
+          predicates:
+            - Path=/api/comments/**
+
+      httpclient:
+        connect-timeout: 2000
+        response-timeout: 10s
+
+its:
+  jwt:
+    # Must be byte-identical to the User Service's secret: it signs, this verifies.
+    secret: ${JWT_SECRET:its-dev-secret-key-change-me-min-32-bytes-long}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+
+# One Swagger UI for the whole system, with a dropdown per service (DESIGN 7.3).
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: user-service
+        url: /api/users/v3/api-docs
+      - name: project-service
+        url: /api/projects/v3/api-docs
+      - name: issue-service
+        url: /api/issues/v3/api-docs
+      - name: comment-service
+        url: /api/comments/v3/api-docs
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+
+logging:
+  level:
+    com.its.gateway: INFO
+    org.springframework.cloud.gateway: INFO

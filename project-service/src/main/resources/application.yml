@@ -1,0 +1,58 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: project-service
+
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/project_db?createDatabaseIfNotExist=true&serverTimezone=UTC
+    username: ${DB_USER:its}
+    password: "${DB_PASSWORD:Its#Tracker2026!}"
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    show-sql: false
+
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            # Mandatory, not tuning. Without them a stalled downstream is waited on
+            # indefinitely and will exhaust this service's request threads (DESIGN 6.5).
+            connect-timeout: 2000
+            read-timeout: 5000
+            logger-level: basic
+          issue-service:
+            # Longer, because the cascade delete is a bulk operation over many rows.
+            read-timeout: 10000
+
+its:
+  seed:
+    enabled: ${SEED_ENABLED:true}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  level:
+    com.its.project: INFO
+    com.its.project.client: DEBUG

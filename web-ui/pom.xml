@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.its</groupId>
+    <artifactId>issue-tracker</artifactId>
+    <version>1.0.0</version>
+  </parent>
+
+  <artifactId>web-ui</artifactId>
+  <name>Web UI</name>
+  <description>Server-rendered JSP front end for the Issue Tracking System</description>
+
+  <!--
+    WAR, not JAR, and not by preference. Spring Boot cannot serve JSPs from an executable
+    JAR: Tomcat resolves JSP resources through a hard-coded file pattern that does not
+    survive nested-jar packaging. An executable WAR does work with `java -jar`, which is
+    how this module is run. See SRS A-09.
+  -->
+  <packaging>war</packaging>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-validation</artifactId>
+    </dependency>
+
+    <!-- Jasper compiles the JSPs; without it every view resolves to a download prompt. -->
+    <dependency>
+      <groupId>org.apache.tomcat.embed</groupId>
+      <artifactId>tomcat-embed-jasper</artifactId>
+    </dependency>
+
+    <!-- JSTL on the jakarta namespace. The older javax.servlet.jsp.jstl coordinates
+         compile against Spring Boot 3 but fail to resolve tags at runtime. -->
+    <dependency>
+      <groupId>jakarta.servlet.jsp.jstl</groupId>
+      <artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.glassfish.web</groupId>
+      <artifactId>jakarta.servlet.jsp.jstl</artifactId>
+    </dependency>
+
+    <!--
+      No Eureka client, and no Feign. This module is a client of the system, not a part
+      of it: it reaches the gateway at a configured URL and never resolves or calls a
+      service directly (SRS C-07).
+    -->
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-war-plugin</artifactId>
+        <configuration>
+          <!-- No web.xml: configuration is entirely Java/annotation based. -->
+          <failOnMissingWebXml>false</failOnMissingWebXml>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>

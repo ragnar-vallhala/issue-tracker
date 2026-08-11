@@ -1,0 +1,54 @@
+server:
+  port: ${SERVER_PORT:8085}
+
+spring:
+  application:
+    name: user-service
+
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/user_db?createDatabaseIfNotExist=true&serverTimezone=UTC
+    username: ${DB_USER:its}
+    password: "${DB_PASSWORD:Its#Tracker2026!}"
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update          # development only; Flyway if this outlives the case study
+    open-in-view: false         # see DESIGN 10.1 - stops lazy loads during serialisation
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: false
+
+its:
+  jwt:
+    # Development default so a clean checkout starts. Override with JWT_SECRET everywhere
+    # else - and note the gateway must be given the identical value, since it verifies
+    # what this service signs.
+    secret: ${JWT_SECRET:its-dev-secret-key-change-me-min-32-bytes-long}
+    expiry-seconds: ${JWT_EXPIRY_SECONDS:3600}
+  seed:
+    # Loads the reference workbook's sample users on an empty table (SRS 10.5).
+    enabled: ${SEED_ENABLED:true}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  level:
+    com.its.user: INFO
+    com.its.user.client: DEBUG   # ISC calls are logged at DEBUG (NFR-06)

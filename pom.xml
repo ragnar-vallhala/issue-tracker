@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <!--
+    Parent aggregator for the Issue Tracking System.
+
+    Deliberately NOT a home for shared entity or DTO classes: each service owns its
+    own model. See DESIGN.md section 3 - a shared model module is how a microservice
+    project quietly becomes a distributed monolith.
+
+    This POM exists only to pin versions and aggregate the build.
+  -->
+  <groupId>com.its</groupId>
+  <artifactId>issue-tracker</artifactId>
+  <version>1.0.0</version>
+  <packaging>pom</packaging>
+
+  <name>Issue Tracking System</name>
+  <description>Spring Boot microservices issue tracker - see docs/SRS.md and docs/DESIGN.md</description>
+
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>3.2.5</version>
+    <relativePath/>
+  </parent>
+
+  <modules>
+    <module>eureka-server</module>
+    <module>user-service</module>
+    <module>project-service</module>
+    <module>issue-service</module>
+    <module>comment-service</module>
+    <module>api-gateway</module>
+    <module>web-ui</module>
+  </modules>
+
+  <properties>
+    <java.version>17</java.version>
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <spring-cloud.version>2023.0.1</spring-cloud.version>
+    <springdoc.version>2.5.0</springdoc.version>
+    <jjwt.version>0.12.5</jjwt.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-dependencies</artifactId>
+        <version>${spring-cloud.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <!--
+      Actuator in every module, because FR-SYS-07 asks for a health endpoint on every
+      service and because the start-up script polls /actuator/health to know when a tier
+      is ready. Declared here rather than per-module: it is not optional anywhere, and the
+      `management.endpoints` block in each application.yml is inert without it.
+    -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+
+    <!-- Available to every module: test scaffolding is not optional here. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+</project>

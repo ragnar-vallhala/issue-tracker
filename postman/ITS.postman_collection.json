@@ -1,0 +1,750 @@
+{
+  "info": {
+    "name": "Issue Tracking System",
+    "description": "Every endpoint in SRS section 9, driven through the API gateway on :8080.\n\nRun `Log in` first: it stores the JWT in the `token` collection variable, and every other request sends it automatically. Requests are ordered so the folders can be run top to bottom against the seeded reference data (users 101-104, projects 1011-1013, issues 1-2).\n\nThe inter-service endpoints are marked ISC in their names - those are the ones Milestone 5 asks for.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "token", "value": "" },
+    { "key": "ownerId", "value": "101" },
+    { "key": "assigneeId", "value": "104" },
+    { "key": "projectId", "value": "1011" },
+    { "key": "issueId", "value": "1" },
+    { "key": "commentId", "value": "" },
+    { "key": "newProjectId", "value": "" },
+    { "key": "newIssueId", "value": "" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "0 - Authentication",
+      "item": [
+        {
+          "name": "Sign up (new user)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('Confirmation message is the one the case study specifies', () => {",
+                  "    pm.expect(pm.response.json().message).to.eql('Your account is created successfully');",
+                  "});",
+                  "pm.test('No password is ever returned', () => {",
+                  "    pm.expect(pm.response.json().user).to.not.have.property('password');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Assignee\",\n  \"email\": \"test.assignee{{$randomInt}}@example.com\",\n  \"password\": \"TestPass!2026\",\n  \"profile\": \"Created by the Postman collection\",\n  \"role\": \"ASSIGNEE\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/users", "host": ["{{baseUrl}}"], "path": ["api", "users"] }
+          }
+        },
+        {
+          "name": "Sign up - duplicate email is 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+                  "pm.test('Reported against the email field', () => {",
+                  "    pm.expect(pm.response.json().fieldErrors[0].field).to.eql('email');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Emily Sinha\",\n  \"email\": \"emily.sinha@example.com\",\n  \"password\": \"EmilySecure!2025\",\n  \"role\": \"PROJECT_OWNER\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/users", "host": ["{{baseUrl}}"], "path": ["api", "users"] }
+          }
+        },
+        {
+          "name": "Log in (Project Owner) - RUN THIS FIRST",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('token', body.token);",
+                  "pm.test('Role is returned so a client can route to the right dashboard', () => {",
+                  "    pm.expect(body.role).to.eql('PROJECT_OWNER');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"emily.sinha@example.com\",\n  \"password\": \"EmilySecure!2025\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/users/login", "host": ["{{baseUrl}}"], "path": ["api", "users", "login"] }
+          }
+        },
+        {
+          "name": "Log in (Assignee)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Role is ASSIGNEE', () => pm.expect(pm.response.json().role).to.eql('ASSIGNEE'));",
+                  "// Uncomment to continue the run as Carlos and exercise FR-ISS-07:",
+                  "// pm.collectionVariables.set('token', pm.response.json().token);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"carlos.singh@example.com\",\n  \"password\": \"CarlosStrong$2025\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/users/login", "host": ["{{baseUrl}}"], "path": ["api", "users", "login"] }
+          }
+        },
+        {
+          "name": "Log in - wrong password is 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('401 Unauthorized', () => pm.response.to.have.status(401));",
+                  "pm.test('Message reveals nothing about the account', () => {",
+                  "    pm.expect(pm.response.json().message).to.eql('Invalid email or password');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"emily.sinha@example.com\",\n  \"password\": \"definitely-wrong\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/users/login", "host": ["{{baseUrl}}"], "path": ["api", "users", "login"] }
+          }
+        },
+        {
+          "name": "No token is 401 at the gateway",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": ["pm.test('401 Unauthorized', () => pm.response.to.have.status(401));"],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/users", "host": ["{{baseUrl}}"], "path": ["api", "users"] }
+          }
+        },
+        {
+          "name": "Spoofed X-User-Role is stripped by the gateway",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Still 401 - a header cannot substitute for a token', () => {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [
+              { "key": "X-User-Id", "value": "101" },
+              { "key": "X-User-Role", "value": "PROJECT_OWNER" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/issues", "host": ["{{baseUrl}}"], "path": ["api", "issues"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "1 - User Service (Milestone 1)",
+      "item": [
+        {
+          "name": "GET all users",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Seeded users are present', () => {",
+                  "    pm.expect(pm.response.json().length).to.be.at.least(4);",
+                  "});",
+                  "pm.test('Role is the enum name, not the stored digit', () => {",
+                  "    pm.expect(['PROJECT_OWNER', 'ASSIGNEE']).to.include(pm.response.json()[0].role);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/users", "host": ["{{baseUrl}}"], "path": ["api", "users"] }
+          }
+        },
+        {
+          "name": "GET users filtered to assignees",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/users?role=ASSIGNEE",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"],
+              "query": [{ "key": "role", "value": "ASSIGNEE" }]
+            }
+          }
+        },
+        {
+          "name": "GET user by id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Emily is a Project Owner (role 0 in the workbook)', () => {",
+                  "    pm.expect(pm.response.json().role).to.eql('PROJECT_OWNER');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/users/{{ownerId}}", "host": ["{{baseUrl}}"], "path": ["api", "users", "{{ownerId}}"] }
+          }
+        },
+        {
+          "name": "GET unknown user is 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "exec": ["pm.test('404', () => pm.response.to.have.status(404));"], "type": "text/javascript" }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/users/424242", "host": ["{{baseUrl}}"], "path": ["api", "users", "424242"] }
+          }
+        },
+        {
+          "name": "ISC - issues assigned to a user by id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Delegated to the Issue Service and returned a list', () => {",
+                  "    pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/users/{{assigneeId}}/issues", "host": ["{{baseUrl}}"], "path": ["api", "users", "{{assigneeId}}", "issues"] }
+          }
+        },
+        {
+          "name": "ISC - issues assigned to a user by username",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "// Username is the local part of the email address (SRS A-18)."
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/users/username/carlos.singh/issues", "host": ["{{baseUrl}}"], "path": ["api", "users", "username", "carlos.singh", "issues"] }
+          }
+        },
+        {
+          "name": "PUT update a user's profile",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"profile\": \"Project owner with a focus on platform delivery\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/users/{{ownerId}}", "host": ["{{baseUrl}}"], "path": ["api", "users", "{{ownerId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2 - Project Service (Milestone 2)",
+      "item": [
+        {
+          "name": "GET all projects",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "exec": ["pm.test('200 OK', () => pm.response.to.have.status(200));"], "type": "text/javascript" }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/projects", "host": ["{{baseUrl}}"], "path": ["api", "projects"] }
+          }
+        },
+        {
+          "name": "POST create a project",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('newProjectId', pm.response.json().projectId);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectName\": \"Postman Project {{$randomInt}}\",\n  \"projectOwnerId\": {{ownerId}},\n  \"startDate\": \"2026-01-05\",\n  \"endDate\": \"2026-06-30\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/projects", "host": ["{{baseUrl}}"], "path": ["api", "projects"] }
+          }
+        },
+        {
+          "name": "POST - an Assignee cannot own a project (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Explains that the user is not a Project Owner', () => {",
+                  "    pm.expect(pm.response.json().message).to.include('not a Project Owner');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectName\": \"Should Not Exist {{$randomInt}}\",\n  \"projectOwnerId\": {{assigneeId}},\n  \"startDate\": \"2026-01-05\",\n  \"endDate\": \"2026-06-30\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/projects", "host": ["{{baseUrl}}"], "path": ["api", "projects"] }
+          }
+        },
+        {
+          "name": "POST - end before start is rejected (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "exec": ["pm.test('400 Bad Request', () => pm.response.to.have.status(400));"], "type": "text/javascript" }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectName\": \"Backwards Dates {{$randomInt}}\",\n  \"projectOwnerId\": {{ownerId}},\n  \"startDate\": \"2026-06-30\",\n  \"endDate\": \"2026-01-05\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/projects", "host": ["{{baseUrl}}"], "path": ["api", "projects"] }
+          }
+        },
+        {
+          "name": "GET project by id",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/projects/{{projectId}}", "host": ["{{baseUrl}}"], "path": ["api", "projects", "{{projectId}}"] }
+          }
+        },
+        {
+          "name": "GET projects by owner",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/projects/owner/{{ownerId}}", "host": ["{{baseUrl}}"], "path": ["api", "projects", "owner", "{{ownerId}}"] }
+          }
+        },
+        {
+          "name": "PUT update a project",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectName\": \"Profile Management\",\n  \"projectOwnerId\": {{ownerId}},\n  \"startDate\": \"2025-09-18\",\n  \"endDate\": \"2025-12-31\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/projects/{{projectId}}", "host": ["{{baseUrl}}"], "path": ["api", "projects", "{{projectId}}"] }
+          }
+        },
+        {
+          "name": "ISC - issues within a project by id",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/projects/{{projectId}}/issues", "host": ["{{baseUrl}}"], "path": ["api", "projects", "{{projectId}}", "issues"] }
+          }
+        },
+        {
+          "name": "ISC - issues within a project by name",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/projects/projectName/Profile Management/issues", "host": ["{{baseUrl}}"], "path": ["api", "projects", "projectName", "Profile Management", "issues"] }
+          }
+        },
+        {
+          "name": "DELETE the project created above (cascades)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('204 No Content', () => pm.response.to.have.status(204));",
+                  "// Deleting a project deletes its issues and their comments (FR-PRJ-09).",
+                  "// The cascade runs children-first, so a failure leaves the project intact."
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/projects/{{newProjectId}}", "host": ["{{baseUrl}}"], "path": ["api", "projects", "{{newProjectId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3 - Issue Service (Milestone 3)",
+      "item": [
+        {
+          "name": "GET all issues",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/issues", "host": ["{{baseUrl}}"], "path": ["api", "issues"] }
+          }
+        },
+        {
+          "name": "POST create an issue",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('newIssueId', pm.response.json().issueId);",
+                  "pm.test('Timestamps are set server-side', () => {",
+                  "    pm.expect(pm.response.json().createdOn).to.not.be.null;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"summary\": \"Created by the Postman collection\",\n  \"description\": \"Exercises FR-ISS-01 and the cross-service reference checks.\",\n  \"projectId\": {{projectId}},\n  \"assigneeId\": {{assigneeId}},\n  \"createdBy\": {{ownerId}},\n  \"status\": \"TO_DO\",\n  \"priority\": \"HIGH\",\n  \"type\": \"BUG\",\n  \"storyPoints\": 3,\n  \"sprint\": \"Sprint 42\",\n  \"tags\": \"postman,smoke\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/issues", "host": ["{{baseUrl}}"], "path": ["api", "issues"] }
+          }
+        },
+        {
+          "name": "POST - unknown project is 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Names the offending field', () => {",
+                  "    pm.expect(pm.response.json().fieldErrors[0].field).to.eql('projectId');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"summary\": \"Points at a project that does not exist\",\n  \"projectId\": 999999,\n  \"createdBy\": {{ownerId}},\n  \"status\": \"TO_DO\",\n  \"priority\": \"LOW\",\n  \"type\": \"TASK\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/issues", "host": ["{{baseUrl}}"], "path": ["api", "issues"] }
+          }
+        },
+        {
+          "name": "POST - an unknown enum value is a helpful 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Lists the permitted values', () => {",
+                  "    pm.expect(pm.response.json().message).to.include('TO_DO');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"summary\": \"Bad enum\",\n  \"projectId\": {{projectId}},\n  \"createdBy\": {{ownerId}},\n  \"status\": \"OPEN\",\n  \"priority\": \"HIGH\",\n  \"type\": \"BUG\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/issues", "host": ["{{baseUrl}}"], "path": ["api", "issues"] }
+          }
+        },
+        {
+          "name": "GET issue by id (carries commentCount)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "// commentCount is omitted, not zeroed, if the Comment Service is down."
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/issues/{{issueId}}", "host": ["{{baseUrl}}"], "path": ["api", "issues", "{{issueId}}"] }
+          }
+        },
+        {
+          "name": "PUT update an issue",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"IN_PROGRESS\",\n  \"priority\": \"CRITICAL\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/issues/{{newIssueId}}", "host": ["{{baseUrl}}"], "path": ["api", "issues", "{{newIssueId}}"] }
+          }
+        },
+        {
+          "name": "PUT mark done, then try to move backwards (409)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Put the issue into DONE first, so the request below exercises the",
+                  "// transition rule rather than the ordinary update path (FR-ISS-14).",
+                  "pm.sendRequest({",
+                  "    url: pm.collectionVariables.get('baseUrl') + '/api/issues/' + pm.collectionVariables.get('newIssueId'),",
+                  "    method: 'PUT',",
+                  "    header: {",
+                  "        'Content-Type': 'application/json',",
+                  "        'Authorization': 'Bearer ' + pm.collectionVariables.get('token')",
+                  "    },",
+                  "    body: { mode: 'raw', raw: JSON.stringify({ status: 'DONE' }) }",
+                  "}, () => {});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+                  "pm.test('Explains that it must be reopened to TO_DO', () => {",
+                  "    pm.expect(pm.response.json().message).to.include('TO_DO');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"IN_PROGRESS\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/issues/{{newIssueId}}", "host": ["{{baseUrl}}"], "path": ["api", "issues", "{{newIssueId}}"] }
+          }
+        },
+        {
+          "name": "ISC - issues by project",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/issues/project/{{projectId}}", "host": ["{{baseUrl}}"], "path": ["api", "issues", "project", "{{projectId}}"] }
+          }
+        },
+        {
+          "name": "ISC - issues by owner (created_by)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/issues/owner/{{ownerId}}", "host": ["{{baseUrl}}"], "path": ["api", "issues", "owner", "{{ownerId}}"] }
+          }
+        },
+        {
+          "name": "ISC - issues by assignee",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/issues/assignee/{{assigneeId}}", "host": ["{{baseUrl}}"], "path": ["api", "issues", "assignee", "{{assigneeId}}"] }
+          }
+        },
+        {
+          "name": "DELETE the issue created above (deletes its comments too)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "exec": ["pm.test('204 No Content', () => pm.response.to.have.status(204));"], "type": "text/javascript" }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/issues/{{newIssueId}}", "host": ["{{baseUrl}}"], "path": ["api", "issues", "{{newIssueId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4 - Comment Service",
+      "item": [
+        {
+          "name": "POST add a comment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('commentId', pm.response.json().commentId);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"issueId\": {{issueId}},\n  \"authorId\": {{ownerId}},\n  \"body\": \"Reproduced on Safari 17 - raising the priority.\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/comments", "host": ["{{baseUrl}}"], "path": ["api", "comments"] }
+          }
+        },
+        {
+          "name": "GET comments on an issue (newest first)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/comments/issue/{{issueId}}", "host": ["{{baseUrl}}"], "path": ["api", "comments", "issue", "{{issueId}}"] }
+          }
+        },
+        {
+          "name": "ISC - comment count for an issue",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "exec": ["pm.test('200 OK', () => pm.response.to.have.status(200));"], "type": "text/javascript" }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/comments/issue/{{issueId}}/count", "host": ["{{baseUrl}}"], "path": ["api", "comments", "issue", "{{issueId}}", "count"] }
+          }
+        },
+        {
+          "name": "PUT edit your own comment",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"body\": \"Reproduced on Safari 17 and Firefox 122.\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/comments/{{commentId}}", "host": ["{{baseUrl}}"], "path": ["api", "comments", "{{commentId}}"] }
+          }
+        },
+        {
+          "name": "DELETE your own comment",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "exec": ["pm.test('204 No Content', () => pm.response.to.have.status(204));"], "type": "text/javascript" }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/comments/{{commentId}}", "host": ["{{baseUrl}}"], "path": ["api", "comments", "{{commentId}}"] }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+# Test profile: an in-memory database so the wiring can be verified without MySQL.
+spring:
+  datasource:
+    # NON_KEYWORDS=USER is required: 'user' is a reserved word in H2 2.x, and the entity
+    # is mapped to a table of that name because the reference workbook says so.
+    url: jdbc:h2:mem:user_test;MODE=MySQL;DATABASE_TO_LOWER=TRUE;NON_KEYWORDS=USER;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+
+its:
+  jwt:
+    secret: test-secret-key-that-is-at-least-32-bytes-long
+    expiry-seconds: 3600
+  seed:
+    enabled: false
+
+# No registry in tests: the client would spend the whole run retrying a connection to
+# localhost:8761 and logging the failures.
+eureka:
+  client:
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false
