@@ -90,13 +90,13 @@
                 <tbody>
                 <c:forEach var="issue" items="${issues}">
                     <tr>
-                        <td class="mono muted">${issue.issueId()}</td>
+                        <td class="num">${issue.issueId()}</td>
                         <td>
                             <a href="${pageContext.request.contextPath}/issues/${issue.issueId()}">
                                 <c:out value="${issue.summary()}"/>
                             </a>
                         </td>
-                        <td class="muted">
+                        <td class="num">
                             <c:out value="${projectNames[issue.projectId()]}"/>
                         </td>
                         <td>
@@ -109,7 +109,7 @@
                                 <c:out value="${issue.priorityLabel()}"/>
                             </span>
                         </td>
-                        <td class="muted">
+                        <td class="num">
                             <c:out value="${empty issue.sprint() ? '—' : issue.sprint()}"/>
                         </td>
                     </tr>

@@ -42,10 +42,15 @@ Then open **http://localhost:8090**.
 
 Stop everything with `./scripts/stop-all.sh`. Logs are written to `logs/`.
 
-### Seeded accounts
+### Seeded data
 
-From the reference workbook. Passwords are stored as BCrypt hashes; these are the
-plaintexts to type in.
+Starting the services on empty tables loads a development dataset: **12 users, 8
+projects, 40 issues and 30 comments**, spread so that every status, priority and type is
+represented and the dashboards have something real to show. Project 1013 is deliberately
+left with no issues, as the fixture for empty states and the cascade delete.
+
+Passwords are stored as BCrypt hashes; these are the plaintexts to type in. The four
+accounts from the reference workbook keep their original passwords:
 
 | Email | Password | Role |
 |---|---|---|
@@ -54,8 +59,22 @@ plaintexts to type in.
 | `carlos.singh@example.com` | `CarlosStrong$2025` | Assignee |
 | `michael.patel@example.com` | `MichaelPass#2025` | Assignee |
 
-Sign in as Emily to see the owner side (projects, issue creation, cascade delete), and as
-Carlos to see the assignee side (status-only updates on his own issues).
+Everyone else — `lena.fischer@`, `aisha.rahman@`, `tom.okafor@`, `diego.morales@`,
+`sofia.bergman@`, `raj.mehta@`, `chloe.dubois@`, `noah.adeyemi@` (all `@example.com`) —
+uses **`Password!2026`**. Lena is the third Project Owner; the rest are Assignees.
+
+Sign in as **Emily** for the owner side (three projects, issue creation, cascade delete),
+**Lena** for a second owner's portfolio, or **Carlos** for the assignee side — a board of
+his own work, where he can change status and nothing else.
+
+To reload the dataset after changing it, clear the tables and restart:
+
+```bash
+mysql -u its -p'Its#Tracker2026!' -e "TRUNCATE user_db.user; TRUNCATE project_db.project; \
+  TRUNCATE issue_db.issue; TRUNCATE comment_db.comment;"
+```
+
+Seeders only populate an empty table, so nothing is overwritten while data is present.
 
 ---
 

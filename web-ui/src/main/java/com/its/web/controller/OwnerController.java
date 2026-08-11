@@ -67,9 +67,16 @@ public class OwnerController {
         model.addAttribute("issueCounts", issueCounts);
         model.addAttribute("recentIssues", issues.stream()
                 .sorted((a, b) -> compareUpdated(b, a))
-                .limit(8)
+                .limit(10)
                 .toList());
         model.addAttribute("summary", summarise(projects.size(), issues));
+
+        // The composition meter renders every status in workflow order, including the
+        // empty ones - a bar that silently omits "In Review" reads as a rendering fault
+        // rather than as an empty column.
+        model.addAttribute("statusOrder", Options.statuses().keySet());
+        model.addAttribute("statusLabels", Options.statuses());
+        model.addAttribute("userNames", nameLookup());
         model.addAttribute("user", user);
 
         return "owner/dashboard";

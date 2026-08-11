@@ -22,6 +22,11 @@ spring:
     open-in-view: false
     show-sql: false
 
+its:
+  seed:
+    # Loads development comment threads on an empty table.
+    enabled: ${SEED_ENABLED:true}
+
 eureka:
   client:
     service-url:

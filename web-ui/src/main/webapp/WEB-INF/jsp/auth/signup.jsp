@@ -20,6 +20,7 @@
 
 <div class="auth-shell">
     <div class="auth-card">
+        <div class="auth-mark">Issue Tracking System</div>
         <h1>Create an account</h1>
         <p class="subtitle">Choose the role you will be working in.</p>
 
@@ -66,7 +67,7 @@
                 <form:errors path="role" cssClass="field-error" element="span"/>
             </div>
 
-            <button type="submit" class="btn" style="width:100%">Create account</button>
+            <button type="submit" class="btn btn-block">Create account</button>
         </form:form>
 
         <div class="auth-footer">

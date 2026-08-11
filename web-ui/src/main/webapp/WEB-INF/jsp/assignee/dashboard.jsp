@@ -56,7 +56,7 @@
                 <div class="board-column">
                     <h3>
                         <span><c:out value="${statusLabels[column.key]}"/></span>
-                        <span>${fn:length(column.value)}</span>
+                        <em>${fn:length(column.value)}</em>
                     </h3>
 
                     <c:choose>

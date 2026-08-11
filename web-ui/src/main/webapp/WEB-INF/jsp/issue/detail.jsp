@@ -58,17 +58,16 @@
         <div class="detail-item">
             <div class="detail-label">Assignee</div>
             <div class="detail-value">
-                <c:choose>
-                    <c:when test="${empty issue.assigneeId()}">
-                        <span class="muted">Unassigned</span>
-                    </c:when>
-                    <c:otherwise><c:out value="${userNames[issue.assigneeId()]}"/></c:otherwise>
-                </c:choose>
+                <jsp:include page="../layout/person.jsp">
+                                <jsp:param name="personName" value="${userNames[issue.assigneeId()]}"/>
+                            </jsp:include>
             </div>
         </div>
         <div class="detail-item">
             <div class="detail-label">Reported by</div>
-            <div class="detail-value"><c:out value="${userNames[issue.createdBy()]}"/></div>
+            <div class="detail-value"><jsp:include page="../layout/person.jsp">
+                                <jsp:param name="personName" value="${userNames[issue.createdBy()]}"/>
+                            </jsp:include></div>
         </div>
         <div class="detail-item">
             <div class="detail-label">Story points</div>
@@ -95,7 +94,7 @@
     <c:if test="${not empty issue.description()}">
         <div style="margin-top:20px">
             <div class="detail-label">Description</div>
-            <p style="margin:4px 0 0"><c:out value="${issue.description()}"/></p>
+            <p class="prose"><c:out value="${issue.description()}"/></p>
         </div>
     </c:if>
 
@@ -181,7 +180,7 @@
         </c:otherwise>
     </c:choose>
 
-    <div style="padding:16px 20px; border-top:1px solid var(--border)">
+    <div class="comment-form">
         <form method="post"
               action="${pageContext.request.contextPath}/issues/${issue.issueId()}/comments">
             <div class="form-row">

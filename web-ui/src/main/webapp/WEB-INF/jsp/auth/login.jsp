@@ -17,8 +17,9 @@
 
 <div class="auth-shell">
     <div class="auth-card">
-        <h1>Issue Tracker</h1>
-        <p class="subtitle">Sign in to continue.</p>
+        <div class="auth-mark">Issue Tracking System</div>
+        <h1>Sign in</h1>
+        <p class="subtitle">Welcome back.</p>
 
         <c:if test="${not empty notice}">
             <div class="flash flash-notice"><c:out value="${notice}"/></div>
@@ -42,7 +43,7 @@
                 <form:errors path="password" cssClass="field-error" element="span"/>
             </div>
 
-            <button type="submit" class="btn" style="width:100%">Sign in</button>
+            <button type="submit" class="btn btn-block">Sign in</button>
         </form:form>
 
         <div class="auth-footer">

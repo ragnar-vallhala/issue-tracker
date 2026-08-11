@@ -17,6 +17,7 @@
 
 <div class="auth-shell">
     <div class="auth-card">
+        <div class="auth-mark">Issue Tracking System</div>
         <h1>Welcome, <c:out value="${created.user().name()}"/></h1>
 
         <div class="flash flash-success" style="margin-top:16px">
@@ -38,7 +39,7 @@
             </div>
         </div>
 
-        <a class="btn" style="width:100%; text-align:center"
+        <a class="btn btn-block"
            href="${pageContext.request.contextPath}/login">Sign in</a>
     </div>
 </div>

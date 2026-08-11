@@ -51,13 +51,13 @@
                 <tbody>
                 <c:forEach var="issue" items="${issues}">
                     <tr>
-                        <td class="mono muted">${issue.issueId()}</td>
+                        <td class="num">${issue.issueId()}</td>
                         <td>
                             <a href="${pageContext.request.contextPath}/issues/${issue.issueId()}">
                                 <c:out value="${issue.summary()}"/>
                             </a>
                         </td>
-                        <td class="muted"><c:out value="${issue.typeLabel()}"/></td>
+                        <td class="num"><c:out value="${issue.typeLabel()}"/></td>
                         <td>
                             <span class="badge badge-${issue.statusSlug()}">
                                 <c:out value="${issue.statusLabel()}"/>
@@ -71,16 +71,11 @@
                         <td>
                             <%-- Names come from a single users call made for the page, not
                                  one lookup per row (DESIGN 8.6). --%>
-                            <c:choose>
-                                <c:when test="${empty issue.assigneeId()}">
-                                    <span class="muted">Unassigned</span>
-                                </c:when>
-                                <c:otherwise>
-                                    <c:out value="${userNames[issue.assigneeId()]}"/>
-                                </c:otherwise>
-                            </c:choose>
+                            <jsp:include page="../layout/person.jsp">
+                                <jsp:param name="personName" value="${userNames[issue.assigneeId()]}"/>
+                            </jsp:include>
                         </td>
-                        <td class="muted">
+                        <td class="num">
                             <c:out value="${empty issue.storyPoints() ? '—' : issue.storyPoints()}"/>
                         </td>
                         <td class="table-actions">
