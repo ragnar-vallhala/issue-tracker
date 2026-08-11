@@ -1,5 +1,10 @@
 server:
   port: 8083
+  # Bind on every interface so the system is reachable from other machines on the
+  # network. This is Spring Boot's default when server.address is unset, but stating it
+  # makes the intent explicit and gives one place to lock it down: set SERVER_ADDRESS to
+  # 127.0.0.1 to make this service loopback-only again.
+  address: ${SERVER_ADDRESS:0.0.0.0}
 
 spring:
   application:

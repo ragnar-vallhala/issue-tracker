@@ -185,3 +185,17 @@ request returning 401 with a token that looks perfectly valid.
 | 8 | Push to GitHub | — |
 
 The web UI is not a source milestone; it was added on top of the case study's scope.
+
+---
+
+## Network access
+
+Every service binds `0.0.0.0` by default, so the system is reachable from other machines
+on the network — open `http://<host-ip>:8090` instead of `localhost`.
+
+To restrict it to the local machine, set `SERVER_ADDRESS=127.0.0.1` in `.env`.
+
+Two things to be aware of before exposing this beyond a trusted network: it is served
+over plain HTTP, so tokens and session cookies travel in clear text; and the seeded
+accounts and their passwords are in this README. Neither matters on a development
+machine — both matter on a shared network.
