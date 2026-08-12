@@ -19,6 +19,15 @@ its:
   seed:
     enabled: false
 
+# This file replaces the main application.yml rather than merging with it, so the docs
+# path has to be repeated here - otherwise springdoc falls back to its default and the
+# tests would assert against a route the running service does not serve.
+springdoc:
+  api-docs:
+    path: /api/users/v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
 # No registry in tests: the client would spend the whole run retrying a connection to
 # localhost:8761 and logging the failures.
 eureka:

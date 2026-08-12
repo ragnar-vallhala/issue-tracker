@@ -89,7 +89,7 @@ public class IssueController {
             @PathVariable Integer id,
             @Valid @RequestBody IssueUpdateRequest request,
             // Injected by the gateway after it verifies the JWT (DESIGN section 9).
-            // Absent when the service is called directly, e.g. Postman in development.
+            // Absent when the service is called directly, e.g. its own Swagger UI on :8083.
             @RequestHeader(value = "X-User-Id", required = false) Integer callerId,
             @RequestHeader(value = "X-User-Role", required = false) String callerRole) {
 

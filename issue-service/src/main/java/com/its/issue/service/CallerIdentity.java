@@ -9,7 +9,7 @@ package com.its.issue.service;
  * ever exposed directly, this service would have to verify the token itself.
  *
  * <p>{@link #anonymous()} covers a call arriving without the headers, which in practice
- * means Postman hitting the service port directly during development. Such a caller is
+ * means this service's own Swagger UI on :8083, bypassing the gateway. Such a caller is
  * treated as unrestricted, since there is no identity to apply a role rule to. That is a
  * development affordance, and it is the reason the header-stripping filter at the gateway
  * matters: a client must not be able to supply these headers itself.

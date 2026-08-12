@@ -22,7 +22,8 @@ import org.springframework.test.web.servlet.MockMvc;
  * the status-code contract of SRS 9.5, all through real HTTP plumbing.
  *
  * <p>The one thing it cannot cover is MySQL-specific behaviour, which is why the
- * acceptance criteria still call for the Postman collection against a real instance.
+ * acceptance criteria still call for a manual pass through Swagger UI against a real
+ * instance.
  */
 @SpringBootTest
 @AutoConfigureMockMvc

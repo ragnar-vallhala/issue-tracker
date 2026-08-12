@@ -32,7 +32,7 @@
 graph TB
   subgraph Users
     BR[Browser]
-    PM[Postman]
+    SW[Swagger UI]
   end
   subgraph Presentation
     W["Web UI · JSP/JSTL<br/>:8090 (WAR)<br/>session · role routing"]
@@ -57,7 +57,7 @@ graph TB
   end
   BR --> W
   W --> GW
-  PM --> GW
+  SW --> GW
   GW --> US & PS & IS & CS
   US --> UDB
   PS --> PDB
@@ -113,8 +113,7 @@ issue-tracker/                    # parent pom (packaging: pom)
 ├── project-service/
 ├── issue-service/
 ├── comment-service/
-├── web-ui/                       # packaging: war
-└── postman/ITS.postman_collection.json
+└── web-ui/                       # packaging: war
 ```
 
 There is deliberately **no shared `common` module carrying entities**. Shared entity classes are the classic way a "microservices" project quietly becomes a distributed monolith — a schema change in one service would force a lockstep rebuild of the others. The small amount of duplication in error-response classes is the price of independence.
@@ -243,7 +242,7 @@ Each service ships a `DataSeeder` (`CommandLineRunner`, enabled by `its.seed.ena
 
 A runner rather than a `data.sql`, for one reason: the workbook lists passwords in plaintext and they must be stored as BCrypt hashes, so the seed has to run through the encoder. Committing pre-computed hashes to a SQL file would work but would hide which password each one corresponds to — which matters the moment someone needs to log in as Emily to look at the owner dashboard.
 
-The Postman collection asserts against these fixtures. The sample `created_by = sam.lee` is mapped to a real user id by the loader ([A-17](./SRS.md#a-17)).
+The Swagger examples and the manual acceptance pass are written against these fixtures. The sample `created_by = sam.lee` is mapped to a real user id by the loader ([A-17](./SRS.md#a-17)).
 
 ---
 
@@ -473,6 +472,10 @@ spring:
 ### 7.3 Swagger Behind the Gateway
 Each service serves its own `/v3/api-docs` and `/swagger-ui.html` (FR-SYS-04). The Gateway aggregates the definitions into a single Swagger UI with a service dropdown, so the whole API is browsable from one page.
 
+Every service's `OpenApiConfig` also declares a `bearerAuth` HTTP security scheme and applies it globally, which is what turns that page from documentation into the system's API client: Authorize once with a token from `POST /api/users/login` and every *Try it out* call across all four services carries it. Without the scheme the UI renders the endpoints but cannot call any of them past the JWT filter — the reason a separate REST client was needed before.
+
+The scheme is documentation, not enforcement. It is declared per service because the modules share no common artifact by design (§3), and it is the Gateway filter above that rejects a missing or invalid token; a service reached directly on its own port still answers without one.
+
 ---
 
 ## 8. Web UI Design
@@ -649,7 +652,7 @@ No credential is committed. `DB_USER`, `DB_PASSWORD` and `JWT_SECRET` come from 
 | ISC | Feign clients against a stubbed downstream, including timeout and 5xx paths | WireMock |
 | Cascade | Project delete with a Comment Service forced to fail mid-way — assert the project row survives (FR-PRJ-11) | WireMock |
 | Web tier | Interceptor behaviour (unauthenticated redirect, role mismatch → 403) and view-name resolution | MockMvc |
-| Manual / acceptance | Every endpoint in SRS §9 through the Gateway; every screen in SRS §7 | Postman collection, committed |
+| Manual / acceptance | Every endpoint in SRS §9 through the Gateway; every screen in SRS §7 | Swagger UI at `:8080/swagger-ui.html` |
 
 The failure paths matter as much as the happy paths: an ISC suite that only stubs `200 OK` proves nothing about FR-USR-11, and a cascade test that never fails mid-way proves nothing about FR-PRJ-11.
 

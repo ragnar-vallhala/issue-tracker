@@ -1,4 +1,4 @@
-package com.its.project.config;
+package com.its.comment.config;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -13,16 +13,17 @@ import org.springframework.context.annotation.Configuration;
 public class OpenApiConfig {
 
     @Bean
-    public OpenAPI projectServiceOpenApi() {
+    public OpenAPI commentServiceOpenApi() {
         return new OpenAPI().info(new Info()
-                .title("ITS - Project Service")
+                .title("ITS - Comment Service")
                 .version("1.0.0")
                 .description("""
-                        Project lifecycle and ownership for the Issue Tracking System.
+                        Comment threads on issues.
 
-                        DELETE /api/projects/{id} cascades to the project's issues and their
-                        comments. The cascade is ordered children-first and is not atomic; a
-                        failed step leaves the project intact so the call can be retried.
+                        Not specified by either source document - the case study lists a
+                        Comment Service in its microservices breakdown and refers to a
+                        section 7.4 that does not exist. This contract is the project's own
+                        (SRS A-01).
 
                         Paste the token from POST /api/users/login into Authorize before calling
                         anything here.

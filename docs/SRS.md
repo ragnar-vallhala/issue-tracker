@@ -53,7 +53,7 @@ Four bounded services sit behind a gateway, each owning its data exclusively; no
 graph LR
   B[Browser] --> W[Web UI · JSP]
   W --> GW[API Gateway]
-  PM[Postman] --> GW
+  SW[Swagger UI] --> GW
   GW -->|/api/users/**| US[User Service]
   GW -->|/api/projects/**| PS[Project Service]
   GW -->|/api/issues/**| IS[Issue Service]
@@ -428,7 +428,7 @@ Column names are the workbook's ([A-15](#a-15)); where the PDF's ER diagram used
 
 ### 10.5 Seed Data
 
-The workbook's rows are the seed dataset, loaded per schema at development start-up. They are also the fixtures the Postman collection asserts against.
+The workbook's rows are the seed dataset, loaded per schema at development start-up. They are also the fixtures the Swagger examples and the manual acceptance pass are written against.
 
 **Users** — note that both Project Owners carry `role = 0` and both engineers carry `role = 1`, which is the evidence behind [A-04](#a-04):
 
@@ -524,7 +524,7 @@ Returning an empty list on a downstream outage would be indistinguishable from a
 
 <a id="a-09"></a>
 ### A-09 — A complete JSP web UI is delivered · **Confirmed, reversed from Revision 1**
-Revision 1 read the Objective and the eight Postman-verified milestones as backend-only. **Reversed on review:** a finished UI is required, built with **JSP and JSTL**, served by a separate `web-ui` Spring Boot module packaged as a WAR. Requirements are in §7. Note that JSP cannot be served from an executable JAR — a hard-coded Tomcat file pattern breaks it — so WAR packaging is a constraint, not a preference.
+Revision 1 read the Objective and the eight API-verified milestones as backend-only. **Reversed on review:** a finished UI is required, built with **JSP and JSTL**, served by a separate `web-ui` Spring Boot module packaged as a WAR. Requirements are in §7. Note that JSP cannot be served from an executable JAR — a hard-coded Tomcat file pattern breaks it — so WAR packaging is a constraint, not a preference.
 
 <a id="a-10"></a>
 ### A-10 — Reference workbook · **RESOLVED**
@@ -577,9 +577,9 @@ The PDF describes the attachment as *"Endpoints and DB"* and says it carries sam
 
 | Milestone | Source requirement | Satisfied by |
 |---|---|---|
-| 1 | User Microservice with §7.1 endpoints, tested in Postman | FR-USR-01..08, §9.1 |
-| 2 | Project Microservice with §7.2 endpoints, tested in Postman | FR-PRJ-01..08, §9.2 |
-| 3 | Issue Microservice with §7.3 endpoints, tested in Postman | FR-ISS-01..08, §9.3 |
+| 1 | User Microservice with §7.1 endpoints, tested in Swagger UI | FR-USR-01..08, §9.1 |
+| 2 | Project Microservice with §7.2 endpoints, tested in Swagger UI | FR-PRJ-01..08, §9.2 |
+| 3 | Issue Microservice with §7.3 endpoints, tested in Swagger UI | FR-ISS-01..08, §9.3 |
 | 4 | Eureka Server implemented; all services on the dashboard | FR-SYS-01 |
 | 5 | All inter-service communication endpoints (§7.1–7.4) | FR-USR-09, -10; FR-PRJ-13, -14; FR-ISS-10, -11, -12; FR-CMT-04 |
 | 6 | `ResponseEntity` throughout; Swagger for API documentation | C-04, FR-SYS-04, FR-SYS-05 |
@@ -591,8 +591,8 @@ The PDF describes the attachment as *"Endpoints and DB"* and says it carries sam
 ### Definition of Done
 - All endpoints in §9 return the status codes in §9.5 and are exercisable through the Gateway.
 - All four services appear as `UP` on the Eureka dashboard.
-- Swagger UI loads for each service.
-- A Postman collection covering every endpoint is committed to the repository.
+- Swagger UI loads for each service, and the aggregated UI behind the Gateway lists all four.
+- Every endpoint in §9 is callable from that UI: the Authorize button carries the JWT across services, so no endpoint needs a second tool to exercise it.
 - The workbook's seed data (§10.5) loads cleanly and every ISC endpoint returns the expected rows against it.
 - Every screen in §7 is reachable, both dashboards render live data, and no page shows a stack trace.
 - Deleting a project removes its issues and their comments, verified across all three databases.

@@ -101,7 +101,7 @@ Seeders only populate an empty table, so nothing is overwritten while data is pr
 mvn test
 ```
 
-70 tests. The ones worth knowing about:
+76 tests. The ones worth knowing about:
 
 | What | Where |
 |---|---|
@@ -111,12 +111,23 @@ mvn test
 | Status transitions and Assignee restrictions | `issue-service` · `IssueWorkflowTest` |
 | A partial cascade failure deletes no issue rows | `issue-service` · `IssueCascadeDeleteTest` |
 | A spoofed `X-User-Role` header is stripped at the gateway | `api-gateway` · `JwtAuthenticationFilterTest` |
+| The OpenAPI document carries `bearerAuth`, so Swagger can Authorize | `user-service` · `OpenApiDocumentTest` |
 
 Tests run against in-memory H2 and need neither MySQL nor a running registry.
 
-**Postman:** import `postman/ITS.postman_collection.json`. Run *0 - Authentication →
-Log in* first; it stores the token and every other request picks it up. The folders are
-ordered to run top to bottom against the seeded data.
+**Exercising the API by hand:** open http://localhost:8080/swagger-ui.html. The dropdown
+top right switches between the four services; everything is reachable through the gateway,
+so the port never changes.
+
+1. Pick *user-service*, run `POST /api/users/login` with a seeded account, and copy the
+   `token` from the response.
+2. Click **Authorize**, paste the raw token — no `Bearer` prefix — and confirm.
+3. Every other endpoint now sends that token. The authorization stays put while you switch
+   services in the dropdown, so a project owner's token carries over to the Issue Service.
+
+Endpoints are grouped by controller and documented against the seeded data, so reading a
+service top to bottom walks its lifecycle. `POST /api/users` and `POST /api/users/login`
+are public and ignore the Authorize state; everything else answers 401 without it.
 
 ---
 
@@ -131,7 +142,6 @@ ordered to run top to bottom against the seeded data.
 ├── issue-service/   :8083  issue_db
 ├── comment-service/ :8084  comment_db
 ├── web-ui/          :8090  JSP front end (WAR)
-├── postman/         API collection
 ├── scripts/         start-all.sh, stop-all.sh
 └── sql/setup.sql    One-time database setup
 ```
@@ -194,11 +204,11 @@ request returning 401 with a token that looks perfectly valid.
 
 | # | Requirement | Where |
 |---|---|---|
-| 1 | User microservice + endpoints, Postman | `user-service`, collection folder 1 |
-| 2 | Project microservice + endpoints, Postman | `project-service`, folder 2 |
-| 3 | Issue microservice + endpoints, Postman | `issue-service`, folder 3 |
+| 1 | User microservice + endpoints, exercised in Swagger | `user-service`, *user-service* in the dropdown |
+| 2 | Project microservice + endpoints, exercised in Swagger | `project-service`, *project-service* |
+| 3 | Issue microservice + endpoints, exercised in Swagger | `issue-service`, *issue-service* |
 | 4 | Eureka; all services on the dashboard | `eureka-server`, :8761 |
-| 5 | All inter-service communication endpoints | 8 endpoints marked **ISC** in Swagger and the collection |
+| 5 | All inter-service communication endpoints | 8 endpoints marked **ISC** in Swagger |
 | 6 | `ResponseEntity` throughout; Swagger | Every controller; :8080/swagger-ui.html |
 | 7 | Gateway with client-side load balancing | `api-gateway`, `lb://` routes |
 | 8 | Push to GitHub | — |
