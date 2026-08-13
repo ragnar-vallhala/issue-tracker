@@ -1,6 +1,9 @@
 package com.its.comment.seed;
 
 import com.its.comment.repository.CommentRepository;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +27,12 @@ import org.springframework.stereotype.Component;
  * <p>Threads deliberately mix authors, including Project Owners and Assignees on the same
  * issue, which is what makes the cascade delete interesting: applying the author rule to
  * it would fail on any thread with more than one participant.
+ *
+ * <p>Three layers, as in the sibling seeders: hand-written threads that read as
+ * conversations, one deliberately long thread on issue 50 - forty-odd comments, which is
+ * where an issue detail page that renders every comment inline starts to hurt - and
+ * generated comments across the bulk issues so the counts on a list screen are not all
+ * zero.
  */
 @Component
 @ConditionalOnProperty(name = "its.seed.enabled", havingValue = "true")
@@ -36,10 +45,10 @@ public class DataSeeder implements CommandLineRunner {
             VALUES (?, ?, ?, ?)
             """;
 
-    private record SeedComment(int issueId, int authorId, String body, String createdOn) {
+    record SeedComment(int issueId, int authorId, String body, String createdOn) {
     }
 
-    private static final List<SeedComment> COMMENTS = List.of(
+    private static final List<SeedComment> CURATED = List.of(
             new SeedComment(1, 104,
                     "Reproduced on Safari 17 and Firefox 122. The stale value comes back "
                             + "for about ninety seconds after saving, which lines up with "
@@ -170,7 +179,134 @@ public class DataSeeder implements CommandLineRunner {
             new SeedComment(17, 105,
                     "Reorder needs to re-price at today's rates, not the original ones. "
                             + "Worth stating on the confirmation screen.",
-                    "2025-12-01 09:35:00"));
+                    "2025-12-01 09:35:00"),
+
+            // Non-Latin text and an apostrophe, on the issues raised for exactly that.
+            new SeedComment(43, 114,
+                    "並び順はロケール依存のコンパレータが原因です。照合順序を明示的に指定すれば直ります。",
+                    "2025-12-09 09:40:00"),
+            new SeedComment(43, 107,
+                    "Then let us pin the collation rather than relying on the JVM default - "
+                            + "the same bug will come back on any host with a different locale.",
+                    "2025-12-11 15:10:00"),
+            new SeedComment(44, 115,
+                    "It is the apostrophe in O'Connor. The key is built by concatenation, so "
+                            + "the quote terminates it early and the lookup misses.",
+                    "2026-02-14 09:15:00"),
+            new SeedComment(47, 115,
+                    "Confirmed the PAN reaches the log. Treating this as an incident, not a "
+                            + "bug - the logs need scrubbing as well as the code fixing.",
+                    "2026-02-16 08:20:00"));
+
+    // ------------------------------------------------------------------------------
+    // Generated volume
+    // ------------------------------------------------------------------------------
+
+    /**
+     * The long thread, on the multi-region epic (issue 50). An issue detail page that
+     * renders every comment inline and unpaged is perfectly comfortable at three and
+     * noticeably less so at forty-five, which is the point of this fixture.
+     */
+    private static final int LONG_THREAD_ISSUE_ID = 50;
+    private static final int LONG_THREAD_SIZE = 45;
+
+    /**
+     * Mirrors the Issue Service's seeder: hand-written issues run to 52, and the
+     * generated block adds 12 for the completed project, 120 and 100 for the two
+     * archives, and 12 for each of 20 generated projects. Repeated rather than shared
+     * because the services deliberately have no common module (DESIGN 3).
+     *
+     * <p>Nothing is validated against these ids - this service calls nobody, by design -
+     * so the cost of drift is a comment attached to an issue that does not exist, which
+     * is simply never shown. Cheap, but worth keeping right.
+     */
+    private static final int FIRST_GENERATED_ISSUE_ID = 53;
+    private static final int GENERATED_ISSUE_COUNT = 12 + 120 + 100 + (20 * 12);
+
+    /** Authors for generated comments - every one a seeded user id in {@code user_db}. */
+    private static final int[] AUTHOR_POOL = {
+            101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112,
+            113, 114, 115, 116, 117, 120};
+
+    private static final String[] THREAD_OPENERS = {
+            "Reproduced on the current release. Attaching the request id from the failing "
+                    + "run in case it helps.",
+            "This has been raised twice before and closed as not reproducible both times. "
+                    + "It reproduces under load, which is probably why.",
+            "Had a look this morning - the cause is upstream of where the error surfaces, "
+                    + "so the stack trace is misleading.",
+            "Confirmed against a copy of production data. It does not happen with the "
+                    + "sample dataset, which explains why the tests are green.",
+            "Not urgent, but it is going to keep costing us support tickets until it is "
+                    + "fixed."};
+
+    private static final String[] THREAD_REPLIES = {
+            "Agreed on the diagnosis. The fix is small; the test that proves it is not.",
+            "Can we size this before it goes into a sprint? It looks like a one-liner and "
+                    + "those are usually the expensive ones.",
+            "Picking this up. Should have something to review by the end of the week.",
+            "Blocked on the platform work - once timeouts are in place this becomes much "
+                    + "easier to reason about.",
+            "Closing the loop: deployed, and the error rate is flat since.",
+            "Worth a follow-up issue for the cleanup rather than growing this one."};
+
+    private static final DateTimeFormatter TIMESTAMP =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    /**
+     * Deterministic by construction - index arithmetic, no randomness - so two clean
+     * checkouts seed identical databases.
+     */
+    private static List<SeedComment> generatedComments() {
+        List<SeedComment> comments = new ArrayList<>();
+        LocalDateTime base = LocalDateTime.of(2025, 3, 4, 10, 0);
+
+        for (int i = 0; i < LONG_THREAD_SIZE; i++) {
+            String body = i == 0
+                    ? "Opening this up for design input. Multi-region touches every service, "
+                            + "so I would rather have the argument here than in four separate "
+                            + "pull requests."
+                    : (i % 2 == 0
+                            ? THREAD_OPENERS[i % THREAD_OPENERS.length]
+                            : THREAD_REPLIES[i % THREAD_REPLIES.length]);
+
+            comments.add(new SeedComment(LONG_THREAD_ISSUE_ID,
+                    AUTHOR_POOL[i % AUTHOR_POOL.length],
+                    body,
+                    base.plusDays(i * 3L).plusMinutes((i * 43L) % 420).format(TIMESTAMP)));
+        }
+
+        // Roughly half the generated issues carry a thread, and those that do carry one
+        // to three comments. A list screen where every count is the same reads as a
+        // rendering fault rather than as data.
+        for (int i = 0; i < GENERATED_ISSUE_COUNT; i++) {
+            if (i % 2 == 1) {
+                continue;
+            }
+            int issueId = FIRST_GENERATED_ISSUE_ID + i;
+            int depth = 1 + (i % 3);
+            LocalDateTime raised = base.plusDays(i % 380);
+
+            for (int c = 0; c < depth; c++) {
+                comments.add(new SeedComment(issueId,
+                        AUTHOR_POOL[(i + c) % AUTHOR_POOL.length],
+                        c == 0
+                                ? THREAD_OPENERS[i % THREAD_OPENERS.length]
+                                : THREAD_REPLIES[(i + c) % THREAD_REPLIES.length],
+                        raised.plusDays(c * 2L).plusMinutes((i * 29L + c * 55L) % 500)
+                                .format(TIMESTAMP)));
+            }
+        }
+        return comments;
+    }
+
+    static final List<SeedComment> COMMENTS = buildComments();
+
+    private static List<SeedComment> buildComments() {
+        List<SeedComment> comments = new ArrayList<>(CURATED);
+        comments.addAll(generatedComments());
+        return List.copyOf(comments);
+    }
 
     private final CommentRepository commentRepository;
     private final JdbcTemplate jdbcTemplate;
@@ -187,10 +323,11 @@ public class DataSeeder implements CommandLineRunner {
             return;
         }
 
-        for (SeedComment comment : COMMENTS) {
-            jdbcTemplate.update(INSERT, comment.issueId(), comment.authorId(),
-                    comment.body(), comment.createdOn());
-        }
+        jdbcTemplate.batchUpdate(INSERT, COMMENTS.stream()
+                .map(comment -> new Object[]{
+                        comment.issueId(), comment.authorId(),
+                        comment.body(), comment.createdOn()})
+                .toList());
 
         log.info("Seeded {} comments across {} issues", COMMENTS.size(),
                 COMMENTS.stream().map(SeedComment::issueId).distinct().count());

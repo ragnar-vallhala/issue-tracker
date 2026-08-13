@@ -428,7 +428,9 @@ Column names are the workbook's ([A-15](#a-15)); where the PDF's ER diagram used
 
 ### 10.5 Seed Data
 
-The workbook's rows are the seed dataset, loaded per schema at development start-up. They are also the fixtures the Swagger examples and the manual acceptance pass are written against.
+The workbook's rows below are the origin of the seed dataset, loaded per schema at development start-up, and they are the fixtures the Swagger examples and the manual acceptance pass are written against. They are reproduced verbatim and are asserted to stay that way (`DataSeederTest` in each service).
+
+The seeders load more than the workbook: 70 users, 34 projects, 524 issues and 551 comments, in three layers — the workbook's rows, then hand-written rows that make the screens worth looking at, then edge-case fixtures and deterministic generated volume. The generated layer uses index arithmetic rather than randomness, so a clean checkout always seeds the same database. Volume is concentrated on two archive projects under a single owner, because the owner dashboard reads every issue of every project it owns and spreading the volume would make every dashboard slow rather than one (see NFR-01).
 
 **Users** — note that both Project Owners carry `role = 0` and both engineers carry `role = 1`, which is the evidence behind [A-04](#a-04):
 
@@ -454,7 +456,9 @@ The workbook's rows are the seed dataset, loaded per schema at development start
 | 1 | Profile cache not updating after changes | 1011 | 104 | TO_DO | HIGH | BUG | 2 | Sprint 42 | profile,cache,update |
 | 2 | Notifications API failure | 1012 | 102 | TO_DO | HIGH | BUG | 2 | Sprint 42 | notifications,api,alerts |
 
-Both sample issues carry `created_by = sam.lee`, a user absent from the User table — see [A-17](#a-17). Project 1013 has no issues, which makes it a useful fixture for the empty-state screens (FR-UI-12) and the cascade delete (FR-PRJ-09).
+Both sample issues carry `created_by = sam.lee`, a user absent from the User table — see [A-17](#a-17). Project 1013 has no issues, which makes it a useful fixture for the empty-state screens (FR-UI-12) and the cascade delete (FR-PRJ-09); project 1022 is a second such fixture, and it has not started yet, which catches code assuming `start_date` is in the past.
+
+The seeded schemas hold no foreign keys across services — a `project_owner_id` in `project_db` cannot reference `user_db` (A-02). The consistency the workbook demonstrates, every owner being a role-0 user and every assignee a role-1 user, is therefore a property of the seeders rather than of the database, and each service's `DataSeederTest` asserts it in place of the constraint the schema cannot carry.
 
 ---
 

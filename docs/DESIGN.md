@@ -238,7 +238,11 @@ Enums are stored with `@Enumerated(EnumType.STRING)`, never `ORDINAL`. Ordinal s
 `created_on` is set by `@CreationTimestamp`, `last_updated_on` by `@UpdateTimestamp`. Client-supplied values for either are discarded in the mapper (FR-ISS-03).
 
 ### 4.5 Seed Data
-Each service ships a `DataSeeder` (`CommandLineRunner`, enabled by `its.seed.enabled`) loading its slice of the workbook's sample rows into an empty table (SRS §10.5), with `AUTO_INCREMENT` advanced past the seeded ids — 105 for users, 1014 for projects — so generated ids continue the workbook's sequence rather than colliding with it.
+Each service ships a `DataSeeder` (`CommandLineRunner`, enabled by `its.seed.enabled`) loading its slice of the dataset into an empty table (SRS §10.5), with `AUTO_INCREMENT` advanced past the seeded ids so generated ids continue the sequence rather than colliding with it.
+
+Each seeder builds its list in three layers: the workbook's rows verbatim, hand-written rows and edge-case fixtures, then deterministic generated volume — index arithmetic over fixed tables, never a random draw, so two clean checkouts produce identical databases and a screenshot stays reproducible. Rows are inserted with `batchUpdate` rather than one statement at a time, and the User Service hashes the one shared development password once instead of per row: BCrypt is deliberately slow, and at seventy accounts the hashing, not the inserts, is what start-up would otherwise cost.
+
+The generated layers are coupled across services by arithmetic rather than by a shared artifact — the Project Service recomputes which generated users are owners, and the Issue Service recomputes which projects exist. That duplication is the direct cost of having no common module (§3), and it is silent when it drifts: there are no foreign keys across schemas, so a project owned by a non-existent user seeds cleanly and only looks wrong on screen. Each service's `DataSeederTest` restates those constraints — column limits, uniqueness, id ranges, role rules, and the fixtures that other services depend on — so the drift fails a build instead of a demo.
 
 A runner rather than a `data.sql`, for one reason: the workbook lists passwords in plaintext and they must be stored as BCrypt hashes, so the seed has to run through the encoder. Committing pre-computed hashes to a SQL file would work but would hide which password each one corresponds to — which matters the moment someone needs to log in as Emily to look at the owner dashboard.
 

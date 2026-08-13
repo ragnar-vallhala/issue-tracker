@@ -44,10 +44,30 @@ Stop everything with `./scripts/stop-all.sh`. Logs are written to `logs/`.
 
 ### Seeded data
 
-Starting the services on empty tables loads a development dataset: **12 users, 8
-projects, 40 issues and 30 comments**, spread so that every status, priority and type is
-represented and the dashboards have something real to show. Project 1013 is deliberately
-left with no issues, as the fixture for empty states and the cascade delete.
+Starting the services on empty tables loads a development dataset: **70 users, 34
+projects, 524 issues and 551 comments**. It is built in three layers, and knowing which
+layer a row came from saves time when a screen looks wrong:
+
+- **Hand-written** — the reference workbook's rows first, then a readable cast and
+  backlog. Every status, priority and type is represented. Issues 1–40 are the ones worth
+  reading.
+- **Edge cases** — values at the 255-character column limit, non-Latin scripts, an
+  apostrophe that breaks naive escaping, a row with every nullable field null, an issue
+  from 2019, critical-and-unassigned, zero story points. These exist to be awkward, and
+  they are how the tidy-data assumptions get caught.
+- **Generated** — a few hundred rows of deterministic filler so lists, filters and status
+  meters are exercised at volume. Index arithmetic, no randomness: two clean checkouts
+  seed identical databases, so a screenshot stays reproducible.
+
+Fixtures worth preserving: projects **1013** and **1022** have no issues (empty states,
+cascade delete against a childless project), every issue on **1021** is `DONE` (a
+completed project reads differently from an empty one), user **118** owns nothing and user
+**119** is assigned nothing.
+
+The bulk sits on two archive projects owned by one account, **`arun.balakrishnan@`**. That
+is deliberate — the owner dashboard fetches every issue of every project it owns, so his
+is the slow one and everybody else's stays quick. Sign in as him to see the system under
+volume.
 
 Passwords are stored as BCrypt hashes; these are the plaintexts to type in. The four
 accounts from the reference workbook keep their original passwords:
@@ -59,13 +79,15 @@ accounts from the reference workbook keep their original passwords:
 | `carlos.singh@example.com` | `CarlosStrong$2025` | Assignee |
 | `michael.patel@example.com` | `MichaelPass#2025` | Assignee |
 
-Everyone else — `lena.fischer@`, `aisha.rahman@`, `tom.okafor@`, `diego.morales@`,
-`sofia.bergman@`, `raj.mehta@`, `chloe.dubois@`, `noah.adeyemi@` (all `@example.com`) —
-uses **`Password!2026`**. Lena is the third Project Owner; the rest are Assignees.
+**Every other account uses `Password!2026`**, including the generated ones. The names
+worth knowing: `lena.fischer@` and `arun.balakrishnan@` are Project Owners,
+`aisha.rahman@`, `tom.okafor@`, `diego.morales@`, `sofia.bergman@`, `raj.mehta@`,
+`chloe.dubois@` and `noah.adeyemi@` are Assignees (all `@example.com`).
 
-Sign in as **Emily** for the owner side (three projects, issue creation, cascade delete),
-**Lena** for a second owner's portfolio, or **Carlos** for the assignee side — a board of
-his own work, where he can change status and nothing else.
+Sign in as **Emily** for the owner side (issue creation, cascade delete), **Carlos** for
+the assignee side — a board of his own work, where he can change status and nothing else,
+**Arun** for the same screens under a few hundred issues, or **Grace**
+(`grace.nakamura@`) for an owner dashboard with nothing on it at all.
 
 To reload the dataset after changing it, clear the tables and restart:
 
@@ -101,7 +123,7 @@ Seeders only populate an empty table, so nothing is overwritten while data is pr
 mvn test
 ```
 
-76 tests. The ones worth knowing about:
+106 tests. The ones worth knowing about:
 
 | What | Where |
 |---|---|
@@ -112,6 +134,7 @@ mvn test
 | A partial cascade failure deletes no issue rows | `issue-service` · `IssueCascadeDeleteTest` |
 | A spoofed `X-User-Role` header is stripped at the gateway | `api-gateway` · `JwtAuthenticationFilterTest` |
 | The OpenAPI document carries `bearerAuth`, so Swagger can Authorize | `user-service` · `OpenApiDocumentTest` |
+| Seed rows fit their columns, and cross-service ids still resolve | all four · `DataSeederTest` |
 
 Tests run against in-memory H2 and need neither MySQL nor a running registry.
 
