@@ -42,6 +42,58 @@ Then open **http://localhost:8090**.
 
 Stop everything with `./scripts/stop-all.sh`. Logs are written to `logs/`.
 
+If a service does not come up, `start-all.sh` reads its log back and names the likely
+cause. `./scripts/start-all.sh -v` adds the exact command, health responses and timings
+for every step.
+
+### Running on Windows
+
+Run it under **Git Bash**, which ships with Git for Windows. Nothing in the application
+itself is platform-specific — no shell-outs, no unix paths, no native dependencies — but
+four things differ from the instructions above.
+
+**Use Git Bash, not PowerShell or `cmd`.** Both scripts are bash. Git Bash also supplies
+the `curl` the readiness probes need.
+
+**Step 1 has no `sudo`.** Run the setup script as the MySQL root user instead:
+
+```bash
+mysql -u root -p < sql/setup.sql
+```
+
+**Check your PATH.** Git Bash inherits the Windows PATH, and the MySQL installer does not
+add the client to it by default. Maven has to be installed separately — there is no
+wrapper in this repository. All three should answer, with Java on **17 or newer**:
+
+```bash
+java -version && mvn -v && mysql --version
+```
+
+`start-all.sh` verifies Java and the build artifacts before it starts anything, so a
+missing JDK is reported rather than discovered seven JVMs later. It also probes MySQL,
+preferring the `mysql` client when it is on PATH and falling back to a TCP check. If that
+probe is ever wrong on your machine, `SKIP_DB_CHECK=1 ./scripts/start-all.sh` bypasses it.
+
+**Line endings are handled, but only for fresh clones.** `.gitattributes` pins `*.sh` to
+LF, because Git for Windows otherwise checks them out with CRLF and bash then fails with
+`/usr/bin/env: 'bash\r': No such file or directory`. A clone taken *before* that file
+existed still has CRLF on disk; re-check out the two scripts once:
+
+```bash
+rm scripts/*.sh && git checkout scripts/
+```
+
+`git checkout` restores **every** file under the path from the last commit, not only the
+one you deleted, so commit or stash any local edits to the scripts first — otherwise this
+silently discards them. Nothing outside `scripts/` is touched. To confirm the fix,
+`file scripts/start-all.sh` should no longer mention `CRLF`.
+
+Two behavioural differences worth knowing. `stop-all.sh` sends SIGTERM, which does not map
+cleanly onto a native Windows JVM, so a service may not run its shutdown hook and can
+linger on the Eureka dashboard as `UP` for a minute after stopping. And closing the Git
+Bash window can take the background JVMs with it — use `stop-all.sh` rather than the
+window's close button, or the next run finds its ports held.
+
 ### Seeded data
 
 Starting the services on empty tables loads a development dataset: **70 users, 34

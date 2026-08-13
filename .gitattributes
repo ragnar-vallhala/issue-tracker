@@ -1,0 +1,24 @@
+# Line endings.
+#
+# Git for Windows installs with core.autocrlf=true, which rewrites text files with CRLF
+# on checkout. For most of this repository that is cosmetic. For the two shell scripts it
+# is fatal: bash reads the trailing carriage return as part of the interpreter name and
+# fails before running a single line of either script -
+#
+#     /usr/bin/env: 'bash\r': No such file or directory
+#
+# or, further in, the equally unhelpful
+#
+#     $'\r': command not found
+#
+# Pinning them to LF costs nothing on Linux or macOS and is the difference between
+# working and not under Git Bash.
+
+# Normalise text files to LF inside the repository, and check them out with whatever the
+# platform expects, unless a rule below overrides it.
+* text=auto
+
+# These must be LF on disk on every platform, for the reason above. `scripts/*.sh` are
+# the ones that matter today; the glob covers any added later without anyone having to
+# remember this file exists.
+*.sh text eol=lf
